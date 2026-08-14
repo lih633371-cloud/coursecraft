@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CourseCraft · AI课程结构引擎（演示版）</title>
+<style>
+  :root{
+    --primary: #2563EB;
+    --primary-dark: #1D4ED8;
+    --bg: #F8FAFC;
+    --card-bg: #ffffff;
+    --line: #E2E8F0;
+    --text: #0F172A;
+    --text-soft: #64748B;
+    --shadow: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.06);
+    --green: #10B981;
+    --blue: #3B82F6;
+    --purple: #8B5CF6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .topbar{
+    display:flex; align-items:center; gap:14px;
+    padding:22px 28px;
+    background:#fff;
+    border-bottom:1px solid var(--line);
+    flex-wrap:wrap;
+  }
+  .mark{
+    width:44px; height:44px; border-radius:11px;
+    background:var(--primary);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:800; font-size:18px;
+    flex-shrink:0;
+  }
+  .brand-name{ font-weight:800; font-size:17px; letter-spacing:0.2px; color:var(--text);}
+  .brand-sub{ font-size:12.5px; color:var(--text-soft); margin-top:1px;}
+  .demo-badge{
+    margin-left:auto; font-size:11.5px; font-weight:700; padding:6px 14px;
+    background:#FEF3C7; color:#92400E; border-radius:100px; border:1px solid #FDE68A;
+    display:flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+
+  .wrap{ max-width:1080px; margin:0 auto; padding:44px 24px 90px;}
+
+  h1.hero{
+    font-weight:800;
+    font-size:clamp(24px, 3.6vw, 34px);
+    text-align:center; line-height:1.35; margin:0 0 14px; color:var(--text);
+  }
+  p.hero-sub{
+    text-align:center; color:var(--text-soft); font-size:15px; line-height:1.75;
+    max-width:600px; margin:0 auto 20px;
+  }
+  .demo-note{
+    max-width:600px; margin:0 auto 36px; padding:14px 18px;
+    background:#EFF6FF; border:1px solid #BFDBFE; border-radius:11px;
+    font-size:13px; color:#1E3A8A; line-height:1.7; text-align:center;
+  }
+
+  .card{
+    background:var(--card-bg);
+    border:1px solid var(--line);
+    border-radius:12px;
+    box-shadow:var(--shadow);
+  }
+  .form-card{ padding:32px 32px 28px; }
+  .form-title{ font-size:16px; font-weight:700; margin:0 0 18px; color:var(--text); display:flex; align-items:center; gap:8px;}
+
+  label{ display:block; font-size:13px; color:var(--text-soft); margin-bottom:8px; font-weight:600;}
+  select{
+    width:100%; padding:13px 15px; font-size:14.5px;
+    border:1px solid var(--line); border-radius:9px;
+    background:#fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%2364748B" stroke-width="2"><path d="M7 10l5 5 5-5"/></svg>') no-repeat right 14px center;
+    appearance:none; -webkit-appearance:none;
+    color:var(--text); font-family:inherit;
+  }
+  select:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.12);}
+
+  button#submit{
+    width:100%; margin-top:24px; padding:15px;
+    background:var(--primary); color:#fff; border:none; border-radius:10px;
+    font-size:15.5px; font-weight:700; font-family:inherit;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:9px;
+    transition:background .15s, transform .12s;
+  }
+  button#submit:hover{ background:var(--primary-dark); }
+  button#submit:active{ transform:scale(0.985); }
+
+  .foot-note{
+    border-top:1px solid var(--line); margin-top:22px; padding-top:14px;
+    font-size:12px; color:#94A3B8; line-height:1.8;
+  }
+
+  .loading-shell{ margin-top:26px; padding:60px 30px; text-align:center;}
+  .spinner{
+    width:36px; height:36px; margin:0 auto 20px;
+    border-radius:50%;
+    border:3px solid #DBEAFE;
+    border-top-color:var(--primary);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .loading-title{ font-weight:700; font-size:15.5px; color:var(--text); margin-bottom:6px;}
+  .loading-sub{ color:var(--text-soft); font-size:13px;}
+
+  .empty-shell{ margin-top:26px; padding:64px 30px; text-align:center;}
+  .empty-icon{
+    width:60px; height:60px; margin:0 auto 20px;
+    border-radius:50%; background:#EFF6FF;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--primary);
+  }
+  .empty-title{ font-weight:700; font-size:15.5px; margin-bottom:6px; color:var(--text);}
+  .empty-sub{ color:var(--text-soft); font-size:13px;}
+
+  .result{ margin-top:28px; }
+  .result-title{
+    font-weight:800; font-size:22px; color:var(--text); margin-bottom:20px;
+    padding-bottom:16px; border-bottom:2px solid var(--primary);
+  }
+  .result-cols{ display:flex; gap:20px; align-items:flex-start; }
+  .col-outline{ width:60%; }
+  .col-tree{ width:40%; }
+  @media (max-width:800px){
+    .result-cols{ flex-direction:column; }
+    .col-outline, .col-tree{ width:100%; }
+  }
+
+  .panel{ padding:26px 28px; }
+  .panel-label{
+    font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+    color:var(--text-soft); margin-bottom:16px;
+  }
+
+  .outline h3{
+    font-size:15px; font-weight:700; color:var(--primary); margin:22px 0 10px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .outline h3:first-child{ margin-top:0; }
+  .level-tag{
+    display:inline-block; font-size:10.5px; font-weight:700; padding:2px 8px;
+    border-radius:100px; color:#fff; margin-left:6px; vertical-align:1px;
+  }
+  .level-基础{ background:var(--green); }
+  .level-进阶{ background:var(--blue); }
+  .level-拓展{ background:var(--purple); }
+
+  .activity-box{
+    background:#F8FAFC; border:1px solid var(--line); border-radius:9px;
+    padding:12px 14px; margin:8px 0 4px; font-size:13px; line-height:1.8; color:#334155;
+  }
+  .activity-box b{ color:var(--text); }
+
+  table.rubric{
+    width:100%; border-collapse:collapse; margin-top:8px; font-size:12.5px;
+  }
+  table.rubric th, table.rubric td{
+    border:1px solid var(--line); padding:9px 10px; text-align:left; line-height:1.6;
+  }
+  table.rubric th{ background:#EFF6FF; color:var(--primary); font-weight:700; font-size:12px;}
+  table.rubric td:first-child{ font-weight:600; white-space:nowrap; background:#FAFBFC; }
+
+  .time-chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;}
+  .time-chip{
+    font-size:12px; padding:6px 12px; border-radius:8px;
+    background:#EFF6FF; color:var(--primary-dark); border:1px solid #BFDBFE;
+  }
+
+  .tree-svg-wrap{ width:100%; }
+  .tree-svg-wrap svg{ width:100%; height:auto; display:block; }
+
+  .legend{ display:flex; gap:14px; flex-wrap:wrap; margin-top:16px; padding-top:14px; border-top:1px solid var(--line);}
+  .legend-item{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-soft);}
+  .legend-dot{ width:10px; height:10px; border-radius:3px; }
+
+  footer{ text-align:center; color:#94A3B8; font-size:12px; padding:36px 0 44px; }
+
+  @media (max-width:640px){
+    .form-card{ padding:24px 20px 20px; }
+    .panel{ padding:22px 20px; }
+    .demo-badge{ margin-left:0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="mark">C</div>
+  <div>
+    <div class="brand-name">CourseCraft</div>
+    <div class="brand-sub">AI课程结构引擎</div>
+  </div>
+  <div class="demo-badge">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+    产品原型演示
+  </div>
+</div>
+
+<div class="wrap">
+  <h1 class="hero">教学目标写不清晰？让 AI 帮你拆成能力结构</h1>
+  <p class="hero-sub">输入学科、学段与教学目标，AI 自动拆解能力节点、设计教学活动与评价量规，并生成可视化能力依赖树。</p>
+  <div class="demo-note">
+    📌 这是产品原型演示版本：下拉选择课程后展示预生成的示例结果，用于展示交互设计与产品逻辑。完整版接入实时 AI 生成能力。
+  </div>
+
+  <div class="card form-card">
+    <div class="form-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+      选择示例课程
+    </div>
+
+    <label for="demoSelect">课程主题（演示版提供以下 2 个预设示例）</label>
+    <select id="demoSelect">
+      <option value="0">小学语文 · 三年级 · 写景作文的观察层次</option>
+      <option value="1">小学数学 · 四年级 · 分数的初步认识</option>
+    </select>
+
+    <button id="submit">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      <span id="btnLabel">生成课程大纲</span>
+    </button>
+
+    <div class="foot-note">
+      能力节点拆解 × 教学活动设计 × 三级评价量规 · 演示版内置示例数据
+    </div>
+  </div>
+
+  <div id="resultArea">
+    <div class="card empty-shell" id="emptyState">
+      <div class="empty-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="5" r="2.5"/><path d="M12 7.5v5M6 19a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><path d="M8 15l-2 2M16 15l2 2"/></svg>
+      </div>
+      <div class="empty-title">等待选择</div>
+      <div class="empty-sub">从上方下拉菜单选择一个示例课程，查看能力结构效果</div>
+    </div>
+  </div>
+
+  <footer>CourseCraft · 教育场景探索 · 独立开发 · 2025</footer>
+</div>
+
+<script>
+const LEVEL_COLOR = { '基础':'#10B981', '进阶':'#3B82F6', '拓展':'#8B5CF6' };
+
+const DEMO_DATA = [
+{
+  "course_title": "写景作文的观察层次",
+  "ability_nodes": [
+    {
+      "name": "整体环境感知",
+      "level": "基础",
+      "prerequisites": [],
+      "activity": { "name": "镜头对照游戏", "duration": "10分钟", "interaction": "教师展示影视远景片段，学生口头描述看到的整体画面", "materials": ["投影仪", "风景短片素材"] }
+    },
+    {
+      "name": "局部景物观察",
+      "level": "基础",
+      "prerequisites": ["整体环境感知"],
+      "activity": { "name": "找中景练习", "duration": "10分钟", "interaction": "小组讨论，在范文中圈出属于中景的句子", "materials": ["范文打印稿", "彩色笔"] }
+    },
+    {
+      "name": "细节特写描写",
+      "level": "进阶",
+      "prerequisites": ["局部景物观察"],
+      "activity": { "name": "特写写作练习", "duration": "15分钟", "interaction": "学生独立写作一段特写描写，同桌互评", "materials": ["写作学案", "实物观察对象"] }
+    },
+    {
+      "name": "观察顺序编排",
+      "level": "进阶",
+      "prerequisites": ["整体环境感知", "局部景物观察", "细节特写描写"],
+      "activity": { "name": "镜头运动模拟", "duration": "10分钟", "interaction": "全班分组，用身体动作模拟推、拉、摇镜头，再对应写作顺序", "materials": ["空白教室场地"] }
+    },
+    {
+      "name": "修辞手法运用",
+      "level": "拓展",
+      "prerequisites": ["细节特写描写"],
+      "activity": { "name": "比喻拟人升级赛", "duration": "10分钟", "interaction": "小组竞赛，为同一细节写出不同修辞版本并投票", "materials": ["计分板", "示例卡片"] }
+    }
+  ],
+  "rubric": [
+    { "dimension": "观察层次丰富度", "levels": { "未达标": "只写了一个层次，画面单薄", "达标": "写出两个层次，能看出景物大致结构", "优秀": "完整写出整体、局部、细节三个层次" } },
+    { "dimension": "观察顺序清晰度", "levels": { "未达标": "顺序混乱，读者看不出观察走向", "达标": "顺序基本清楚，个别地方跳跃", "优秀": "顺序自然流畅，读者能跟着镜头移动" } },
+    { "dimension": "修辞手法运用", "levels": { "未达标": "没有使用修辞，描写平淡", "达标": "使用1处修辞但不够贴切", "优秀": "恰当使用1-2处比喻或拟人，细节更生动" } }
+  ],
+  "time_allocation": ["导入 5分钟", "概念讲解 10分钟", "示范 10分钟", "练习 10分钟", "小结 5分钟"]
+},
+{
+  "course_title": "分数的初步认识",
+  "ability_nodes": [
+    {
+      "name": "平均分概念",
+      "level": "基础",
+      "prerequisites": [],
+      "activity": { "name": "分蛋糕游戏", "duration": "12分钟", "interaction": "教师展示实物圆形教具，学生动手平均分并展示结果", "materials": ["圆形磁贴教具", "剪刀"] }
+    },
+    {
+      "name": "分数的读写",
+      "level": "基础",
+      "prerequisites": ["平均分概念"],
+      "activity": { "name": "分数卡片配对", "duration": "10分钟", "interaction": "同桌互相出题，一人说分数一人写出对应图形", "materials": ["分数卡片", "空白练习纸"] }
+    },
+    {
+      "name": "同分母分数比较",
+      "level": "进阶",
+      "prerequisites": ["分数的读写"],
+      "activity": { "name": "分数擂台赛", "duration": "12分钟", "interaction": "小组竞赛，快速判断两个同分母分数大小并说明理由", "materials": ["计分板", "分数题卡"] }
+    },
+    {
+      "name": "分数与生活的联系",
+      "level": "拓展",
+      "prerequisites": ["同分母分数比较"],
+      "activity": { "name": "生活中的分数调查", "duration": "8分钟", "interaction": "学生分享课前收集的生活中分数应用实例（如披萨、时间）", "materials": ["调查记录单"] }
+    }
+  ],
+  "rubric": [
+    { "dimension": "平均分理解", "levels": { "未达标": "不能正确操作平均分", "达标": "能在提示下完成平均分", "优秀": "能独立准确完成平均分并解释过程" } },
+    { "dimension": "分数表达准确性", "levels": { "未达标": "读写分数经常出错", "达标": "能正确读写常见分数", "优秀": "能准确读写并用图形正确表示任意分数" } },
+    { "dimension": "分数比较应用", "levels": { "未达标": "无法比较同分母分数大小", "达标": "能借助图形比较", "优秀": "能脱离图形直接判断并说明理由" } }
+  ],
+  "time_allocation": ["导入 5分钟", "新知讲解 12分钟", "操作练习 12分钟", "巩固提升 8分钟", "小结 3分钟"]
+}
+];
+
+function escapeHtml(str){
+  return String(str==null?'':str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function truncate(str, n){
+  str = String(str||'');
+  return str.length > n ? str.slice(0, n) + '…' : str;
+}
+
+function renderAbilityTree(data){
+  const nodes = data.ability_nodes || [];
+  const rootLabel = data.course_title || '课程核心能力';
+
+  const W = 640;
+  const nodeW = 128, nodeH = 56;
+  const rootY = 40;
+  const childY = 190;
+  const gapX = W / (nodes.length + 1);
+  const rootX = W / 2;
+
+  const positions = nodes.map((n, i) => ({ x: gapX * (i + 1), y: childY, node: n }));
+  const hasDeepPrereq = nodes.some(n => (n.prerequisites||[]).some(p => nodes.some(nn => nn.name === p)));
+  const H = hasDeepPrereq ? 400 : 320;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">`;
+  svg += `<defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#CBD5E1"/>
+    </marker>
+  </defs>`;
+
+  positions.forEach(p => {
+    const x1 = rootX, y1 = rootY + 24;
+    const x2 = p.x, y2 = p.y - 2;
+    const midY = (y1 + y2) / 2;
+    svg += `<path d="M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}" stroke="#CBD5E1" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>`;
+  });
+
+  positions.forEach(p => {
+    (p.node.prerequisites||[]).forEach(preName => {
+      const target = positions.find(pp => pp.node.name === preName);
+      if(target){
+        const x1 = target.x, y1 = target.y + nodeH/2;
+        const x2 = p.x, y2 = p.y - nodeH/2;
+        const midY = (y1 + y2)/2 + 40;
+        svg += `<path d="M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}" stroke="#93C5FD" stroke-width="1.5" fill="none" stroke-dasharray="4,3" marker-end="url(#arrow)"/>`;
+      }
+    });
+  });
+
+  svg += `<g>
+    <rect x="${rootX-70}" y="${rootY-24}" width="140" height="48" rx="24" fill="#2563EB"/>
+    <text x="${rootX}" y="${rootY+2}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">${escapeHtml(truncate(rootLabel, 14))}</text>
+    <text x="${rootX}" y="${rootY+16}" text-anchor="middle" font-size="9" fill="#DBEAFE">核心能力</text>
+  </g>`;
+
+  positions.forEach(p => {
+    const color = LEVEL_COLOR[p.node.level] || '#64748B';
+    const name = truncate(p.node.name || '', 10);
+    svg += `<g>
+      <rect x="${p.x - nodeW/2}" y="${p.y - nodeH/2}" width="${nodeW}" height="${nodeH}" rx="10" fill="#fff" stroke="${color}" stroke-width="2"/>
+      <rect x="${p.x - nodeW/2}" y="${p.y - nodeH/2}" width="${nodeW}" height="6" rx="3" fill="${color}"/>
+      <text x="${p.x}" y="${p.y + 2}" text-anchor="middle" font-size="12" font-weight="700" fill="#0F172A">${escapeHtml(name)}</text>
+      <text x="${p.x}" y="${p.y + 18}" text-anchor="middle" font-size="9.5" font-weight="700" fill="${color}">${escapeHtml(p.node.level || '')}</text>
+    </g>`;
+  });
+
+  svg += `</svg>`;
+  return svg;
+}
+
+function renderResult(data){
+  const nodesHtml = (data.ability_nodes||[]).map(n => {
+    const levelClass = 'level-' + (n.level || '基础');
+    const act = n.activity || {};
+    return `
+      <h3>${escapeHtml(n.name)}<span class="level-tag ${levelClass}">${escapeHtml(n.level||'')}</span></h3>
+      ${(n.prerequisites && n.prerequisites.length) ? `<div style="font-size:12.5px;color:#64748B;margin-bottom:6px;">前置能力：${n.prerequisites.map(escapeHtml).join('、')}</div>` : ''}
+      <div class="activity-box">
+        <b>${escapeHtml(act.name || '教学活动')}</b>　${escapeHtml(act.duration || '')}<br>
+        互动方式：${escapeHtml(act.interaction || '')}<br>
+        所需材料：${(act.materials||[]).map(escapeHtml).join('、')}
+      </div>
+    `;
+  }).join('');
+
+  const rubricRows = (data.rubric||[]).map(r => {
+    const lv = r.levels || {};
+    return `<tr>
+      <td>${escapeHtml(r.dimension||'')}</td>
+      <td>${escapeHtml(lv['未达标']||'')}</td>
+      <td>${escapeHtml(lv['达标']||'')}</td>
+      <td>${escapeHtml(lv['优秀']||'')}</td>
+    </tr>`;
+  }).join('');
+
+  const timeChips = (data.time_allocation||[]).map(t => `<span class="time-chip">${escapeHtml(t)}</span>`).join('');
+  const svgHtml = renderAbilityTree(data);
+
+  resultArea.innerHTML = `
+    <div class="result">
+      <div class="result-title">${escapeHtml(data.course_title || '课程大纲')}</div>
+      <div class="result-cols">
+        <div class="card panel col-outline">
+          <div class="panel-label">课程大纲</div>
+          <div class="outline">
+            ${nodesHtml}
+            <h3>评价量规</h3>
+            <table class="rubric">
+              <tr><th>维度</th><th>未达标</th><th>达标</th><th>优秀</th></tr>
+              ${rubricRows}
+            </table>
+            ${timeChips ? `<h3>课时分配</h3><div class="time-chip-row">${timeChips}</div>` : ''}
+          </div>
+        </div>
+        <div class="card panel col-tree">
+          <div class="panel-label">能力依赖树</div>
+          <div class="tree-svg-wrap">${svgHtml}</div>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#10B981"></span>基础</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#3B82F6"></span>进阶</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#8B5CF6"></span>拓展</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderLoading(){
+  resultArea.innerHTML = `
+    <div class="card loading-shell">
+      <div class="spinner"></div>
+      <div class="loading-title">正在生成课程结构…</div>
+      <div class="loading-sub">演示版模拟生成过程</div>
+    </div>
+  `;
+}
+
+const submitBtn = document.getElementById('submit');
+const btnLabel = document.getElementById('btnLabel');
+const resultArea = document.getElementById('resultArea');
+const demoSelect = document.getElementById('demoSelect');
+
+submitBtn.addEventListener('click', () => {
+  const idx = parseInt(demoSelect.value, 10);
+  submitBtn.disabled = true;
+  btnLabel.textContent = '生成中…';
+  renderLoading();
+
+  setTimeout(() => {
+    renderResult(DEMO_DATA[idx]);
+    submitBtn.disabled = false;
+    btnLabel.textContent = '生成课程大纲';
+  }, 900);
+});
+</script>
+
+</body>
+</html>
